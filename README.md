@@ -1,4 +1,3 @@
-```
 
 # 🩺 DocAgent: An Intelligent Clinical Assistant  
 
@@ -7,7 +6,7 @@ visit the complete deployed app here: https://docagent.streamlit.app/
 
 This project was created and maintained by **Anidu Yakubu Khalid** as a practical tool for medical support, documentation reference, and exploration of Retrieval-Augmented Generation (RAG) in clinical AI.  
 
----
+
 
 ## Features
 
@@ -17,7 +16,6 @@ This project was created and maintained by **Anidu Yakubu Khalid** as a practica
 - **Custom Medical Corpus**: Includes more than 20 .txt documents covering diseases like diabetes, hypertension, HIV/AIDS, COVID-19, malaria, and more, scraped from WHO official website "https://www.who.int/news-room/fact-sheets".  
 -  **Streamlit UI**: Intuitive web interface for live interaction.    
 
----
 
 ## 🗂️ Project Structure
 
@@ -40,7 +38,7 @@ docAgent/
 
 ---
 
-## 🧪 How to Run Locally
+##  How to Run Locally
 
 ### 1. Clone the Repository
 
