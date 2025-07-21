@@ -116,6 +116,3 @@ GitHub: https://github.com/AY-Khalid
 
 This project is for educational and healthcare support purposes.  
 
-```  
-
-```  
