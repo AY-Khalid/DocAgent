@@ -1,4 +1,5 @@
-```markdown
+```
+
 # 🩺 DocAgent: An Intelligent Clinical Assistant  
 
 visit the complete deployed app here: https://docagent.streamlit.app/  
