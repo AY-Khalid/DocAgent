@@ -1,7 +1,8 @@
 
 # 🩺 DocAgent: An Intelligent Clinical Assistant  
 
-visit the complete deployed app here: https://docagent.streamlit.app/  
+Visit the complete deployed app here: https://docagent.streamlit.app/  
+
 **DocAgent** is a lightweight AI-powered clinical assistant I built using Streamlit and LangChain. It allows healthcare professionals and researchers to query common medical conditions and receive intelligent, contextually relevant responses based on a curated corpus of 30 common ailments.
 
 This project was created and maintained by **Anidu Yakubu Khalid** as a practical tool for medical support, documentation reference, and exploration of Retrieval-Augmented Generation (RAG) in clinical AI.  
@@ -17,7 +18,7 @@ This project was created and maintained by **Anidu Yakubu Khalid** as a practica
 -  **Streamlit UI**: Intuitive web interface for live interaction.    
 
 
-## 🗂️ Project Structure
+## Project Structure
 
 ```
 
