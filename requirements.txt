@@ -1,0 +1,18 @@
+# requirements.txt
+fastapi
+uvicorn
+llama-index
+sentence-transformers
+faiss-cpu
+transformers
+torch
+python-dotenv
+PyMuPDF  # for PDF parsing
+beautifulsoup4
+requests
+
+streamlit
+langchain
+openai
+tqdm
+langchain-community

@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+env/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+
+# Sensitive files
+.env
+
+# Vector store artifacts
+vectorstore/
+
+# document
+gpt_api_key.docx
