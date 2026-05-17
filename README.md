@@ -1,124 +1,99 @@
+# DocAgent
 
-# 🩺 DocAgent: An Intelligent Clinical Assistant  
+> An AI-powered clinical assistant that helps clinicians and patients with symptom triage and next-step guidance. Built with Python, FastAPI, and OpenAI/Gemini LLMs.
 
-**Author:** Anidu Yakubu Khalid  
-**3mtt cohort:** Cohort 3  
-**State:** Edo State  
-**Fellow ID:** FE/23/72226259  
-**Track:** AI/ML
-
-Visit the complete deployed app here: https://docagent.streamlit.app/  
-
-**DocAgent** is a lightweight AI-powered clinical assistant I built using Streamlit and LangChain. It allows healthcare professionals and researchers to query common medical conditions and receive intelligent, contextually relevant responses based on a curated corpus of 30 common ailments.
-
-This project was created and maintained by **Anidu Yakubu Khalid** as a practical tool for medical support, documentation reference, and exploration of Retrieval-Augmented Generation (RAG) in clinical AI.  
-
-
-
-## Features
-
-- **Question Answering**: Ask natural-language clinical questions and get concise, evidence-based answers.  
-- **RAG Engine**: Utilizes LangChain + FAISS + HuggingFace Embeddings for fast and accurate document retrieval.  
-- **Powered by OpenAI GPT**: Uses `gpt-4o-mini` or similar model via the OpenAI API.  
-- **Custom Medical Corpus**: Includes more than 20 .txt documents covering diseases like diabetes, hypertension, HIV/AIDS, COVID-19, malaria, and more, scraped from WHO official website "https://www.who.int/news-room/fact-sheets".  
--  **Streamlit UI**: Intuitive web interface for live interaction.    
-
-
-## Project Structure
-
-```
-
-docAgent/  
-├── app.py                      # Main Streamlit app  
-├── .env                        # Contains your OpenAI API key (excluded from Git)  
-├── requirements.txt            # All dependencies  
-├── scrapy.py                   # Web scrapy using beautifulsoup  
-├── README.md                   # This documentation  
-├── data/    
-│   └── corpus/                 # More than 20 text files representing medical condition knowledge base  
-├── vectorstore/               # FAISS index (auto-generated; ignored in deployment)  
-├── backend/  
-│   ├── rag\_engine.py           # RAG logic with vector store + OpenAI integration  
-│   └── loader.py               # File loading and text splitting  
-
-````
+**🔗 Live demo:** ([DocAgent](https://docagent.streamlit.app/))  
+**👨‍💻 Author:** [Anidu Yakubu Khalid](https://github.com/AY-Khalid)   
 
 ---
 
-##  How to Run Locally
+## What it does  
 
-### 1. Clone the Repository
+DocAgent takes a patient's described symptoms in plain language and returns:  
 
-```bash  
-git clone https://github.com/<your-username>/docAgent.git  
-cd docAgent  
-````
+- A structured triage summary (chief complaint, symptom duration, key features)   
+- A ranked list of possible conditions to consider, with brief reasoning   
+- Suggested next steps (e.g., self-care, see GP within 24 hours, urgent care, emergency)  
+- Clear flags when symptoms suggest a possible emergency  
 
-### 2. Create a `.env` File  
+The system is designed as a **support tool for clinicians and a guidance tool for patients in low-resource settings** — not a replacement for medical advice.  
 
-Create a `.env` file in the root of the project and paste your OpenAI API key like this:  
+## Why I built it  
 
-```env  
-OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  
+Across much of Nigeria and other underserved regions, patients face long wait times and limited access to primary-care clinicians. DocAgent is an experiment in whether an LLM, prompted carefully and with explicit safety rails, can help patients understand whether their symptoms need urgent attention — and help clinicians work through intake faster.  
+
+## How it works  
+
+```
+Patient input (free text)  
+        │
+        ▼
+  ┌────────────────┐
+  │ Symptom parser │  Extracts structured features (onset, severity, location, etc.)  
+  └────────────────┘
+        │
+        ▼
+  ┌────────────────┐
+  │  Triage engine │  Calls LLM with a carefully designed clinical prompt  
+  └────────────────┘
+        │
+        ▼
+  ┌────────────────┐
+  │  Safety layer  │  Flags red-flag symptoms (chest pain, stroke signs, etc.)  
+  └────────────────┘
+        │
+        ▼
+Structured triage response + recommended next steps  
 ```
 
-> **Keep this file secret!** Never share your API key publicly.  
+## Tech stack  
 
-### 3. Install Dependencies  
+- **Backend:** Python, FastAPI  
+- **AI:** OpenAI GPT-4 (primary), Gemini (fallback)  
+- **Frontend:** [list your frontend here — Vue / Streamlit / plain HTML, whichever it actually is]  
+- **Deployment:** [Render / Vercel / Railway / wherever DocAgent is live]  
 
-```bash   
+## Try it locally  
+
+```bash  
+# Clone the repo  
+git clone https://github.com/AY-Khalid/DocAgent.git  
+cd DocAgent  
+
+# Install dependencies  
 pip install -r requirements.txt  
+
+# Add your API keys  
+cp .env.example .env    
+# Edit .env and add OPENAI_API_KEY and GEMINI_API_KEY   
+
+# Run the app  
+uvicorn main:app --reload  
 ```
 
-### 4. Run the App  
+Then open `http://localhost:8000`.  
 
-```bash  
-streamlit run app.py  
-```
+## Project status  
 
----
+This is an actively developed prototype. The deployed version is suitable for demos and testing, not clinical use. I'm currently working on:  
 
-## Deployment (Streamlit Cloud)  
+- [ ] Retrieval over a clinical guidelines knowledge base (RAG)  
+- [ ] Multi-language support (Hausa, Yoruba, Igbo, Pidgin)  
+- [ ] Clinician-facing mode with structured note export  
+- [ ] Audit logging for safety review  
 
-1. Push your project to a GitHub repository.  
-2. Go to [streamlit.io/cloud](https://streamlit.io/cloud) and connect your GitHub.  
-3. Select your repo and branch.  
-4. Set `OPENAI_API_KEY` as a **secret variable** in Streamlit Cloud.  
-5. Click **Deploy**.  
+## Important: not medical advice  
 
----
-
-## Files to Ignore on Deployment  
-
-Make sure these are in your `.gitignore`:  
-
-```gitignore  
-.env  
-vectorstore/  
-__pycache__/  
-*.pyc  
-gpt_api_key.docx  
-```
-
----
-
-## Example Prompt  
-
-```
-"The patient has been experiencing fever, persistent dry cough, and shortness of breath for the past 4 days. What could be the likely diagnosis and treatment plan?"  
-```  
-
----  
-
-## Contact  
-
-Created by **Anidu Yakubu Khalid**  
-Email: aniduyakubu@gmail.com  
-GitHub: https://github.com/AY-Khalid  
-
----
+DocAgent is a research and education tool. It is not a medical device, has not been clinically validated, and should not be used to make medical decisions without consulting a qualified healthcare professional. If you or someone else may be in a medical emergency, contact your local emergency services immediately.  
 
 ## License  
 
-This project is for educational and healthcare support purposes.  
+MIT — see `LICENSE` file.  
 
+## Get in touch  
+
+If you're working on clinical AI in low-resource settings or want to collaborate, reach out:  
+
+- 📧 aniduyakubu@gmail.com  
+- 🐦 [@aykhalid_1](https://twitter.com/aykhalid_1)  
+- 🌐 [aykhalid-portfolio.netlify.app](https://aykhalid-portfolio.netlify.app)  
