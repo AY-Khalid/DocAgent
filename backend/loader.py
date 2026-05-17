@@ -1,7 +1,8 @@
 # backend/loader.py
 
 import os
-from langchain.document_loaders import TextLoader
+# from langchain.document_loaders import TextLoader
+from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 def load_documents(path="data/corpus"):
