@@ -11,9 +11,10 @@ python-dotenv
 PyMuPDF  # for PDF parsing
 beautifulsoup4
 requests
-
-streamlit
 langchain
-openai
-tqdm
 langchain-community
+langchain-classic
+langchain-openai
+openai
+streamlit
+tqdm
