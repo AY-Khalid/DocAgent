@@ -6,7 +6,8 @@ from dotenv import load_dotenv
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_openai import ChatOpenAI
-from langchain.chains.combine_documents import create_stuff_documents_chain
+# from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain_core.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains.retrieval import create_retrieval_chain
 from langchain_core.prompts import ChatPromptTemplate
 # Added to dynamically split documents if vectorstore isn't built yet
