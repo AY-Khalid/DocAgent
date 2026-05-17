@@ -7,12 +7,10 @@ from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_openai import ChatOpenAI
 
-# Primitives guaranteed stable across all modern LangChain versions
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 
-# Fallback ingestion packages
 from langchain_text_splitters import CharacterTextSplitter
 from langchain_community.document_loaders import TextLoader
 
@@ -52,7 +50,6 @@ def load_cached_vectorstore():
     vectorstore.save_local(persist_path)
     return vectorstore
 
-# Helper to format retrieved documents nicely into a single text block
 def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
@@ -71,22 +68,58 @@ def get_production_qa_chain(user_key: str = None):
         max_retries=3 
     )
 
+    # 💡 1. Contextualize Question Chain: Re-writes follow-ups into standalone queries
+    contextualize_q_system_prompt = (
+        "Given a chat history and the latest user question "
+        "which might reference context in the chat history, "
+        "formulate a standalone question which can be understood "
+        "without the chat history. Do NOT answer the question, "
+        "just reformulate it if needed and otherwise return it as is."
+    )
+    
+    contextualize_q_prompt = ChatPromptTemplate.from_messages([
+        ("system", contextualize_q_system_prompt),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{input}"),
+    ])
+    
+    contextualize_q_chain = contextualize_q_prompt | llm | StrOutputParser()
+
+    # 💡 2. Main Response System Prompt
     system_prompt = (
         "You are an expert clinical assistant. Use the following context fragments to synthesize "
         "a precise, evidence-based response. If the answer cannot be found in the context, state "
         "transparently that you do not have sufficient information.\n\n"
-        "Context:\n{context}\n\n"
-        "Question: {input}\n\n"
-        "Answer:"
+        "Context:\n{context}"
     )
     
-    prompt = ChatPromptTemplate.from_template(system_prompt)
+    qa_prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{input}"),
+    ])
 
-    # Pure LCEL Pipeline: Formats context -> Chains Prompt -> Pipes to LLM -> Cleans Output String
+    # 💡 3. Unified Execution Pipeline
+    def route_retrieval(inputs):
+        # If there is chat history, use the contextualization subchain to rewrite the query
+        if inputs.get("chat_history"):
+            return contextualize_q_chain
+        # Otherwise, pass the raw input straight through to the retriever
+        return RunnablePassthrough() | (lambda x: x["input"])
+
     lcel_chain = (
-        {"context": retriever | format_docs, "input": RunnablePassthrough()}
+        RunnablePassthrough.assign(
+            # Dynamically resolves whether to use raw query or rewritten query for retrieval
+            search_query=route_retrieval
+        )
 
-        | prompt
+        | {
+            "context": (lambda x: x["search_query"]) | retriever | format_docs,
+            "chat_history": lambda x: x["chat_history"],
+            "input": lambda x: x["input"]
+        }
+
+        | qa_prompt
         | llm
         | StrOutputParser()
     )
