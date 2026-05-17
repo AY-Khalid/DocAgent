@@ -10,9 +10,12 @@ from langchain_text_splitters import CharacterTextSplitter
 # from langchain.document_loaders import TextLoader
 from langchain_community.document_loaders import TextLoader
 # from langchain.chains import RetrievalQA
-from langchain.chains.retrieval import RetrievalQA
+# from langchain.chains.retrieval import RetrievalQA
+from langchain_classic.chains import RetrievalQA
 # from langchain.chat_models import ChatOpenAI
 from langchain_openai import ChatOpenAI
+
+
 
 load_dotenv()  # Load environment variables from .env
 
