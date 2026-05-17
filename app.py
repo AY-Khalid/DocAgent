@@ -50,12 +50,11 @@ if submit_button and query.strip():
         try:
             user_key_input = custom_key.strip() if custom_key.strip() else None
             
-            # 1. Initialize modern production chain
+            # 1. Initialize stable LCEL chain
             chain = get_production_qa_chain(user_key=user_key_input)
 
-            # 2. Invoke chain using the updated dict format
-            response_payload = chain.invoke({"input": query})
-            result = response_payload["answer"] 
+            # 2. Invoke directly with a clean string query
+            result = chain.invoke(query)
             
             # 3. Render clean output block cleanly exactly once
             st.markdown("### 📋 Generated Clinical Insights")
@@ -64,6 +63,7 @@ if submit_button and query.strip():
                 
         except Exception as e:
             st.error(f"❌ **System Error:** {str(e)}")
+
             
 elif submit_button and not query.strip():
     st.warning("⚠️ Please type a clinical question before clicking submit.")
