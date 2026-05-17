@@ -1,8 +1,7 @@
 # app.py
-
 import streamlit as st
-# Notice the updated function name here to match the modern production architecture
 from backend.rag_engine import get_production_qa_chain
+from langchain_core.messages import HumanMessage, AIMessage
 
 st.set_page_config(
     page_title="DocAgent - Clinical Assistant", 
@@ -10,11 +9,15 @@ st.set_page_config(
     layout="centered"
 )
 
+# Initialize persistent chat history structure in session state if not present
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "langchain_history" not in st.session_state:
+    st.session_state.langchain_history = []
+
 # ─── SIDEBAR AUTHENTICATION ──────────────────────────────────────────
 with st.sidebar:
     st.markdown("### 🔑 Authentication")
-    st.write("Configure your language model credentials.")
-    
     custom_key = st.text_input(
         "Use your own OpenAI API Key (Optional):", 
         type="password",
@@ -23,47 +26,54 @@ with st.sidebar:
     st.divider() 
     
     if custom_key.strip():
-        st.info("⚡ **Status:** Running on your personal OpenAI API key.")
+        st.info("⚡ **Status:** Personal API Key active.")
     else:
-        st.success("🌐 **Status:** Running on the app's default shared API key.")
+        st.success("🌐 **Status:** Shared App Key active.")
+        
+    # Clear conversation utility button
+    if st.button("🗑️ Clear Chat History", use_container_width=True):
+        st.session_state.messages = []
+        st.session_state.langchain_history = []
+        st.rerun()
 
 # ─── MAIN USER INTERFACE ─────────────────────────────────────────────
-col1, col2 = st.columns([0.15, 0.85])
-with col1:
-    st.markdown("## 🩺")
-with col2:
-    st.markdown("# DocAgent \n### *Clinical Assistant RAG Engine*")
-
+st.markdown("# 🩺 DocAgent \n### *Clinical Assistant RAG Engine with Memory*")
 st.markdown("---")
 
-with st.form(key="clinical_query_form"):
-    query = st.text_area(
-        label="💬 Enter your clinical or medical question below:",
-        placeholder="Type or paste your patient case notes, clinical queries, or research questions here...",
-        height=180
-    )
-    submit_button = st.form_submit_button(label="🚀 Run Clinical Analysis", use_container_width=True)
+# Render previous messages from session history cache onto the screen
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-# ─── BACKEND EXECUTION ───────────────────────────────────────────────
-if submit_button and query.strip():
-    with st.spinner("🧠 Analyzing corpus data and compiling response..."):
-        try:
-            user_key_input = custom_key.strip() if custom_key.strip() else None
-            
-            # 1. Initialize stable LCEL chain
-            chain = get_production_qa_chain(user_key=user_key_input)
+# ─── CHAT CONTROLLER INPUT ───────────────────────────────────────────
+if query := st.chat_input("Ask DocAgent a clinical question..."):
+    
+    # 1. Immediately render user question box
+    with st.chat_message("user"):
+        st.markdown(query)
+    st.session_state.messages.append({"role": "user", "content": query})
 
-            # 2. Invoke directly with a clean string query
-            result = chain.invoke(query)
-            
-            # 3. Render clean output block cleanly exactly once
-            st.markdown("### 📋 Generated Clinical Insights")
-            with st.container(border=True):
+    # 2. Process query and stream the AI response block
+    with st.chat_message("assistant"):
+        with st.spinner("🧠 Analyzing case history..."):
+            try:
+                user_key_input = custom_key.strip() if custom_key.strip() else None
+                chain = get_production_qa_chain(user_key=user_key_input)
+
+                # Execute RAG workflow injecting history payload list
+                result = chain.invoke({
+                    "input": query,
+                    "chat_history": st.session_state.langchain_history
+                })
+                
                 st.markdown(result)
                 
-        except Exception as e:
-            st.error(f"❌ **System Error:** {str(e)}")
-
-            
-elif submit_button and not query.strip():
-    st.warning("⚠️ Please type a clinical question before clicking submit.")
+                # 3. Append conversational payloads into state trackers
+                st.session_state.messages.append({"role": "assistant", "content": result})
+                st.session_state.langchain_history.extend([
+                    HumanMessage(content=query),
+                    AIMessage(content=result)
+                ])
+                
+            except Exception as e:
+                st.error(f"❌ **System Error:** {str(e)}")
