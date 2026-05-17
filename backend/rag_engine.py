@@ -6,13 +6,13 @@ from dotenv import load_dotenv
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_openai import ChatOpenAI
-# from langchain.chains.combine_documents import create_stuff_documents_chain
-# from langchain_core.chains.combine_documents import create_stuff_documents_chain
-# from langchain.chains.retrieval import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains.retrieval import create_retrieval_chain
+
+# Primitives guaranteed stable across all modern LangChain versions
 from langchain_core.prompts import ChatPromptTemplate
-# Added to dynamically split documents if vectorstore isn't built yet
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
+
+# Fallback ingestion packages
 from langchain_text_splitters import CharacterTextSplitter
 from langchain_community.document_loaders import TextLoader
 
@@ -27,13 +27,9 @@ def load_cached_vectorstore():
     persist_path = "vectorstore"
     embeddings = get_embeddings_model()
     
-    # Check if the FAISS index already exists on disk
     if os.path.exists(persist_path):
-        print("🔁 Loading existing cached vectorstore...")
         return FAISS.load_local(persist_path, embeddings, allow_dangerous_deserialization=True)
     
-    # 💡 PRODUCTION SAFEGUARD: Self-heal if the folder doesn't exist yet on Streamlit Cloud
-    print("📚 Vectorstore missing. Building a fresh one on-the-fly...")
     corpus_path = "data/corpus/"
     os.makedirs(corpus_path, exist_ok=True)
     
@@ -45,13 +41,10 @@ def load_cached_vectorstore():
                 docs.extend(loader.load())
                 
     if not docs:
-        # If no documents exist yet, create a dummy vector store to keep the app working
-        print("⚠️ Warning: No corpus documents found to index.")
         vectorstore = FAISS.from_texts(["Initial setup document. System active."], embeddings)
         vectorstore.save_local(persist_path)
         return vectorstore
 
-    # Split and build the index
     splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     split_docs = splitter.split_documents(docs)
     
@@ -59,9 +52,11 @@ def load_cached_vectorstore():
     vectorstore.save_local(persist_path)
     return vectorstore
 
+# Helper to format retrieved documents nicely into a single text block
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
 
 def get_production_qa_chain(user_key: str = None):
-    # Fast context lookup from memory cache
     vectorstore = load_cached_vectorstore()
     retriever = vectorstore.as_retriever(search_kwargs={"k": 4}) 
 
@@ -80,13 +75,20 @@ def get_production_qa_chain(user_key: str = None):
         "You are an expert clinical assistant. Use the following context fragments to synthesize "
         "a precise, evidence-based response. If the answer cannot be found in the context, state "
         "transparently that you do not have sufficient information.\n\n"
-        "Context:\n{context}"
+        "Context:\n{context}\n\n"
+        "Question: {input}\n\n"
+        "Answer:"
     )
     
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
-        ("human", "{input}"),
-    ])
+    prompt = ChatPromptTemplate.from_template(system_prompt)
 
-    question_answer_chain = create_stuff_documents_chain(llm, prompt)
-    return create_retrieval_chain(retriever, question_answer_chain)
+    # Pure LCEL Pipeline: Formats context -> Chains Prompt -> Pipes to LLM -> Cleans Output String
+    lcel_chain = (
+        {"context": retriever | format_docs, "input": RunnablePassthrough()}
+
+        | prompt
+        | llm
+        | StrOutputParser()
+    )
+    
+    return lcel_chain
